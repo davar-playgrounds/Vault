@@ -1,0 +1,70 @@
+---
+
+- name: Install dependencies
+  become: true
+  apt:
+    name: "{{ packages }}"
+  vars:
+    packages:
+      - unzip
+
+- name: Download Vault
+  get_url:
+    url: "{{ vault_url }}"
+    dest: "/tmp/{{ vault_file }}"
+
+- name: Creating vault user group
+  group:
+    name: vault
+  become: true
+
+- name: Create Vault User
+  user:
+    name: vault
+    groups: vault
+    state: present
+    shell: /sbin/nologin
+    system: yes
+    createhome: false
+
+- name: Unarchive Vault
+  become: true
+  unarchive:
+    src: "/tmp/{{ vault_file }}"
+    dest: "{{ vault_dir }}"
+    owner: vault
+    group: vault
+    mode: '0755'
+
+- name: Delete Vault file
+  become: true
+  file:
+    dest: "/tmp/{{ vault_file }}"
+    state: absent
+
+- name: set flag
+  command: "setcap cap_ipc_lock=+ep {{ vault_dir }}/vault"
+
+- name: Add Vault Env Variable
+  lineinfile:
+    path: "{{ vault_home }}/.bashrc"
+    line: "export VAULT_ADDR='{{ vault_addr }}'"
+    create: true
+
+- name: source the bashrc file
+  shell: ". {{ vault_home }}/.bashrc"
+
+- name: Copy vault hcl file
+  become: true
+  template:
+    src: "/{{ destination }}/provisioners/roles/vault/templates/vault.hcl.j2"
+    dest: "/etc/vault.hcl"
+    owner: vault
+    group: vault
+    mode: '0640'
+
+- name: Render vault Systemd Config
+  template:
+    src: "/{{ destination }}/provisioners/roles/vault/templates/vault.systemd.j2"
+    dest: /etc/systemd/system/vault.service
+  notify: restart vault

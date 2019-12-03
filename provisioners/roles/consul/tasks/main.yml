@@ -1,0 +1,92 @@
+---
+
+- name: check if consul already installed
+  stat:
+    path: "{{ consul_bin_dir }}/consul"
+  register: consul_file_details
+
+- name: Creating consul user group
+  group:
+    name: "{{ consul_group }}"
+  become: true
+
+- name: Create consul User
+  user:
+    name: "{{ consul_user }}"
+    groups: "{{ consul_group }}"
+    state: present
+    shell: /sbin/nologin
+    system: yes
+    createhome: false
+
+- name: create directorys for consul
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ consul_user }}"
+    group: "{{ consul_group }}"
+  with_items:
+    - "{{ consul_dir }}"
+    - "{{ consul_bin_dir }}"
+    - "{{ consul_config }}"
+
+- name: update apt cache
+  become: true
+  apt:
+    update_cache: true
+  when: not consul_file_details.stat.exists
+
+- name: Install dependencies
+  become: true
+  apt:
+    name: "{{ packages }}"
+    # state: latest
+  vars:
+    packages:
+      - unzip
+  when: not consul_file_details.stat.exists
+
+- name: download consul
+  become: true
+  get_url:
+    url: "{{ consul_url }}"
+    dest: "{{ consul_bin_dir }}"
+  when: not consul_file_details.stat.exists
+
+- name: Unarchive consul
+  become: true
+  unarchive:
+    src: "{{ consul_bin_dir }}/{{ consul_package_name }}"
+    dest: "{{ consul_bin_dir }}/"
+    owner: "{{ consul_user }}"
+    group: "{{ consul_group }}"
+    remote_src: true
+  when: not consul_file_details.stat.exists
+
+- name: delete consul zip file
+  become: true
+  file:
+    dest: "{{ consul_bin_dir }}/{{ consul_package_name }}"
+    state: absent
+  when: not consul_file_details.stat.exists
+
+- name: move consul config template
+  template:
+    src: "/{{ destination }}/provisioners/roles/consul/templates/config.json.j2"
+    dest: "{{ consul_config }}/config.json"
+    owner: "{{ consul_user }}"
+    group: "{{ consul_group }}"
+  tags:
+    - launch
+
+- name: Render consul Systemd Config
+  template:
+    src: "/{{ destination }}/provisioners/roles/consul/templates/consul.systemd.j2"
+    dest: /etc/systemd/system/consul.service
+    mode: 0644
+  notify: restart consul
+  tags:
+    - launch
+
+# - name: flush handlers
+#   meta: flush_handlers

@@ -1,0 +1,29 @@
+{
+
+  "datacenter": "Dev",
+  "data_dir": "{{ consul_dir }}",
+  "log_level": "INFO",
+  "enable_script_checks": true,
+  "client_addr": "127.0.0.1",
+  "node_name": "{{ node_name }}",
+  "advertise_addr": "{{ consul_ip }}",
+{% if (agent == 'server') %}
+  "server": true,
+  "bootstrap_expect": 1
+{% else %}
+  "server": false,
+  "retry_join": ["provider=aws tag_key=Name tag_value=consul"],
+  "retry_interval": "10s",
+  "ui": true,
+  "service": {
+    "id": "{{ node_name }}",
+    "name": "{{ node_name }}",
+    "port": 80,
+    "check": {
+      "http": "http://localhost:80",
+      "interval": "10s"
+    }
+  }
+{% endif %}
+
+}

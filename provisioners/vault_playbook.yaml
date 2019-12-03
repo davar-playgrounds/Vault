@@ -1,0 +1,9 @@
+---
+- name: setup Vault
+  hosts: vault
+  become: true
+  become_user: root
+
+  roles:
+    - { role: consul, agent: 'server'}
+    - vault

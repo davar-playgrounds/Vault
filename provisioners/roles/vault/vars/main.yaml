@@ -1,0 +1,23 @@
+---
+
+vault_version: 0.9.5
+vault_url: "https://releases.hashicorp.com/vault/{{ vault_version }}/{{ vault_file }}"
+vault_file: "vault_{{ vault_version }}_linux_amd64.zip"
+
+vault_user: vault
+
+vault_home: "/home/{{ vault_user }}"
+
+vault_dir: /usr/local/bin
+
+destination: vagrant
+
+vault_addr: "0.0.0.0:{{ vault_port }}"
+
+vault_port: 8200
+
+vault_kv: vault
+
+consul_addr: "127.0.0.1:{{ consul_port }}"
+
+consul_port: 8500

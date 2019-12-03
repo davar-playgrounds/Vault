@@ -1,0 +1,14 @@
+[
+    {
+        "name": "vault",
+        "box": "ubuntu/xenial64",
+        "memory": 1024,
+        "cpus": 2,
+        "ip_addr": "192.168.43.10",
+        "guest_port": "8200",
+        "host_port": "8200",
+        "playbook": "provisioners/vault_playbook.yaml",
+        "hosts": "provisioners/hosts/dev_env_hosts",
+        "vm": "virtualbox"
+    }
+]

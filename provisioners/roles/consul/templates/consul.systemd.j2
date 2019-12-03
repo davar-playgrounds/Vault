@@ -1,0 +1,17 @@
+[Unit]
+Description="Consul Agent"
+Requires=network-online.target
+After=network-online.target
+ConditionFileNotEmpty={{ consul_config }}/config.json
+
+[Service]
+User=consul
+Group=consul
+ExecStart={{ consul_bin_dir }}/consul agent -config-dir={{ consul_config }}
+ExecReload={{ consul_bin_dir }}/consul reload
+KillMode=process
+Restart=on-failure
+LimitNOFILE=65536
+
+[Install]
+WantedBy=multi-user.target
